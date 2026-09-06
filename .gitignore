@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# project specific stuff
+embeddings/dataset
+embeddings/receipts_embeddings_400k.npz
