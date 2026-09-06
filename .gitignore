@@ -220,3 +220,4 @@ __marimo__/
 # project specific stuff
 embeddings/dataset
 embeddings/receipts_embeddings_400k.npz
+.db
