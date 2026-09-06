@@ -218,6 +218,35 @@ __marimo__/
 .streamlit/secrets.toml
 
 # project specific stuff
-embeddings/dataset
-embeddings/receipts_embeddings_400k.npz
-.db
+project specific stuff
+# dataset and embeddings (large files)
+embeddings/dataset/
+embeddings/*.npy
+embeddings/*.npz
+embeddings/*.index
+
+# FAISS index and id mapping
+embeddings/recipes_faiss.index
+embeddings/recipes_faiss_ids.npy
+
+# local sqlite DB created by the app
+receipts.db
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment files
+.env
+.env.*
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+

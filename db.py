@@ -1,11 +1,12 @@
 import ast
 import json
+import os
 import sqlite3
 
 import polars as pl
 from flask import g
 
-DATASET_PATH = "embeddings/recipes_ingredients.csv"
+DATASET_PATH = "embeddings/dataset/recipes_ingredients.csv"
 DATABASE_NAME = "receipts.db"
 URI_SQLITE = f"sqlite:///{DATABASE_NAME}"
 
@@ -13,13 +14,23 @@ URI_SQLITE = f"sqlite:///{DATABASE_NAME}"
 def clean_list_string(texto):
     if not texto:
         return "[]"
+    # Prefer JSON parsing since CSV fields often contain JSON-like lists
     try:
-        # 1. From "['sal', 'pimienta']" to python list
+        parsed = json.loads(texto)
+        if isinstance(parsed, (list, tuple)):
+            return json.dumps(parsed)
+    except Exception:
+        pass
+
+    # Fallback to ast.literal_eval for Python-like list literals
+    try:
         lista_real = ast.literal_eval(texto)
-        # 2. From list to a valid json ('["sal", "pimienta"]')
-        return json.dumps(lista_real)
-    except (ValueError, SyntaxError):
-        return "[]"
+        if isinstance(lista_real, (list, tuple)):
+            return json.dumps(lista_real)
+    except Exception:
+        pass
+
+    return "[]"
 
 
 def create_db():
@@ -39,7 +50,11 @@ def create_db():
     conn.close()
 
 
-def initialize_db(g):
+def ensure_database_populated():
+    """Create and populate the sqlite DB file if it doesn't exist."""
+    if os.path.exists(DATABASE_NAME):
+        return
+
     create_db()
 
     df = pl.read_csv(
@@ -55,6 +70,12 @@ def initialize_db(g):
         ],
     )
 
+    print("First df row:")
+    print(df.head(1))
+
+    if "id" in df.columns:
+        df = df.unique(subset=["id"])
+
     df = df.with_columns(
         pl.col("ingredients_raw").map_elements(
             clean_list_string, return_dtype=pl.String
@@ -69,23 +90,24 @@ def initialize_db(g):
         engine="adbc",
     )
 
-    g.db = sqlite3.connect(DATABASE_NAME)
-    g.db.row_factory = sqlite3.Row
-
 
 def get_db():
+    # Open a sqlite3 connection for the current request context (stored in `g`).
     if "db" not in g:
-        initialize_db(g)
+        g.db = sqlite3.connect(DATABASE_NAME)
+        g.db.row_factory = sqlite3.Row
     return g.db
 
 
-def close_db(g):
-    db = g.pop("db", None)
+def close_db(exc=None):
+    from flask import g as flask_g
 
-    if db is not None:
-        db.close()
+    db_conn = flask_g.pop("db", None)
+    if db_conn is not None:
+        db_conn.close()
 
 
 def init_app(app):
-    get_db()
+    # Ensure the DB file exists and is populated once at app startup.
+    ensure_database_populated()
     app.teardown_appcontext(close_db)

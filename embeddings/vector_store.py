@@ -92,7 +92,7 @@ def search_similar_recipes(
     query: Union[str, np.ndarray],
     *,
     model: Optional[SentenceTransformer] = None,
-    top_k: int = 5,
+    top_k: int = 10,
     index=None,
     ids=None,
 ):
@@ -134,10 +134,7 @@ def search_similar_recipes(
 
 def main():
     index, ids = load_or_build_faiss_index()
-    print(f"Índice listo. Total de recetas: {len(ids)}")
-    print(
-        "Listo. Ya puedes usar la búsqueda por similitud con search_similar_recipes()."
-    )
+    print(f"Index ready. Total recipes: {len(ids)}")
 
 
 if __name__ == "__main__":
