@@ -70,6 +70,7 @@ def initialize_db(g):
     )
 
     g.db = sqlite3.connect(DATABASE_NAME)
+    g.db.row_factory = sqlite3.Row
 
 
 def get_db():
